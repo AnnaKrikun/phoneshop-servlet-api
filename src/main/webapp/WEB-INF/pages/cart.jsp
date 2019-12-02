@@ -55,7 +55,13 @@
                     </c:forEach>
                     </tbody>
                 </table>
-                <button class="btn btn-dark" style="margin-left: 1%;">Update</button>
+                <button class="btn btn-dark button-margin">Update</button>
+            </form>
+            <br>
+            <form action="${pageContext.servletContext.contextPath}/checkout" method="get">
+                <button class="btn btn-dark button-margin">
+                    Go to checkout page
+                </button>
             </form>
         </c:when>
         <c:otherwise>
