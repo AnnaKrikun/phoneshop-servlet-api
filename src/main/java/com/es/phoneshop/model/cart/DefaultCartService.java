@@ -1,13 +1,9 @@
-package com.es.phoneshop.service.impl;
+package com.es.phoneshop.model.cart;
 
 import com.es.phoneshop.exception.OutOfStockException;
-import com.es.phoneshop.exception.ProductNotFoundException;
-import com.es.phoneshop.model.cart.Cart;
-import com.es.phoneshop.model.cart.CartItem;
+import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.Product;
-import com.es.phoneshop.repository.ProductDao;
-import com.es.phoneshop.repository.impl.ArrayListProductDao;
-import com.es.phoneshop.service.CartService;
+import com.es.phoneshop.model.product.ProductDao;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -23,11 +19,13 @@ public enum DefaultCartService implements CartService {
 
     private static final String CART_SESSION_ATTRIBUTE = "cart";
     private ProductDao productDao;
+    private final Lock readLock;
     private final Lock writeLock;
 
     DefaultCartService() {
-        productDao = ArrayListProductDao.instance();
+        productDao = ArrayListProductDao.INSTANCE;
         ReadWriteLock readWriteLock = new ReentrantReadWriteLock();
+        readLock = readWriteLock.readLock();
         writeLock = readWriteLock.writeLock();
     }
 
@@ -45,7 +43,7 @@ public enum DefaultCartService implements CartService {
     public void add(Cart cart, Long productId, int quantity) throws OutOfStockException {
         try {
             writeLock.lock();
-            Product product = productDao.get(productId);
+            Product product = productDao.getProduct(productId);
             StockInfo stockInfo = getStockInfo(cart, product, quantity);
             if (stockInfo.availableQuantity - stockInfo.requiredQuantity >= 0) {
                 addToCart(cart, product, quantity);
@@ -62,12 +60,10 @@ public enum DefaultCartService implements CartService {
     public void update(Cart cart, Long productId, int quantity) throws OutOfStockException {
         try {
             writeLock.lock();
-            Product product = productDao.get(productId);
+            Product product = productDao.getProduct(productId);
 
             if (product.getStock() >= quantity) {
-                getOptionalOfCartItem(cart, productId)
-                        .orElseThrow(() -> new ProductNotFoundException(productId.toString()))
-                        .setQuantity(quantity);
+                getOptionalOfCartItem(cart, productId).get().setQuantity(quantity);
             } else {
                 throw new OutOfStockException(product, quantity, product.getStock());
             }
@@ -88,19 +84,6 @@ public enum DefaultCartService implements CartService {
             writeLock.unlock();
         }
     }
-
-    @Override
-    public void clear(Cart cart) {
-        try {
-            writeLock.lock();
-            cart.getItems().clear();
-            cart.setTotalCost(new BigDecimal(0));
-            cart.setTotalQuantity(0);
-        } finally {
-            writeLock.unlock();
-        }
-    }
-
 
     private StockInfo getStockInfo(Cart cart, Product product, int quantity) {
         Optional<CartItem> optionalCartItem = getOptionalOfCartItem(cart, product.getId());
@@ -129,27 +112,27 @@ public enum DefaultCartService implements CartService {
                 .findAny();
     }
 
-    private void recalculateCart(Cart cart) {
+    private void recalculateCart(Cart cart){
         int quantity = getTotalQuantity(cart);
         BigDecimal cost = getTotalCost(cart);
         cart.setTotalCost(cost);
         cart.setTotalQuantity(quantity);
     }
 
-    private int getTotalQuantity(Cart cart) {
+    private int getTotalQuantity(Cart cart){
         return cart.getItems().stream()
                 .map(CartItem::getQuantity)
                 .mapToInt(q -> q)
                 .sum();
     }
 
-    private BigDecimal getTotalCost(Cart cart) {
+    private BigDecimal getTotalCost(Cart cart){
         return cart.getItems().stream()
                 .map(this::multiplyPriceByQuantity)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private BigDecimal multiplyPriceByQuantity(CartItem cartItem) {
+    private BigDecimal multiplyPriceByQuantity(CartItem cartItem){
         return cartItem.getProduct().getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity()));
     }
 

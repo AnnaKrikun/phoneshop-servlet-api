@@ -1,10 +1,9 @@
-package com.es.phoneshop.service.impl;
+package com.es.phoneshop.model.product.viewed;
 
 import com.es.phoneshop.dto.ViewedProductDto;
 import com.es.phoneshop.mapper.ProductMapper;
 import com.es.phoneshop.mapper.impl.ProductMapperImpl;
 import com.es.phoneshop.model.product.Product;
-import com.es.phoneshop.service.ViewedProductsService;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.ArrayList;

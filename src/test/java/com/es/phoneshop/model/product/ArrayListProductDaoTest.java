@@ -1,10 +1,8 @@
-package com.es.phoneshop.repository;
+package com.es.phoneshop.model.product;
 
 import com.es.phoneshop.exception.ProductNotFoundException;
-import com.es.phoneshop.model.product.Product;
 import com.es.phoneshop.model.sortenum.SortField;
 import com.es.phoneshop.model.sortenum.SortOrder;
-import com.es.phoneshop.repository.impl.ArrayListProductDao;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,7 +28,7 @@ public class ArrayListProductDaoTest {
         sampleProducts.add(new Product("mxmv", "kdk", new BigDecimal(60), usd, -3, "https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/manufacturer/Siemens/Siemens%20SXG75.jpg"));
         sampleProducts.add(new Product("oddl", "oowow", new BigDecimal(120), usd, 7, "https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/manufacturer/Siemens/Siemens%20SXG75.jpg"));
         sampleProducts.add(new Product("oeppe", "kkel", new BigDecimal(40), usd, 9, "https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/manufacturer/Siemens/Siemens%20SXG75.jpg"));
-        productDao = ArrayListProductDao.instance();
+        productDao = ArrayListProductDao.INSTANCE;
         initProductDaoProducts(productDao);
     }
 
@@ -41,12 +39,12 @@ public class ArrayListProductDaoTest {
 
     @Test(expected = ProductNotFoundException.class)
     public void whenFindProductByIncorrectIdThenThrowException() {
-        productDao.get(0L);
+        productDao.getProduct(0L);
     }
 
     @Test
     public void whenFindProductByCorrectIdThenReturnProduct() {
-        Product result = productDao.get(1L);
+        Product result = productDao.getProduct(1L);
         assertNotNull(result);
     }
 
@@ -66,7 +64,7 @@ public class ArrayListProductDaoTest {
     @Test
     public void whenSaveProductThenReturnEqualSavedProductToProductBeforeSaving() {
         productDao.save(productToSave);
-        Product result = productDao.get(productToSave.getId());
+        Product result = productDao.getProduct(productToSave.getId());
         assertEquals(result, productToSave);
     }
 
@@ -79,7 +77,7 @@ public class ArrayListProductDaoTest {
     @Test(expected = ProductNotFoundException.class)
     public void whenDeleteProductThenShouldThrowExceptionAfterGettingOfDeletedProduct() {
         productDao.delete(1L);
-        productDao.get(1L);
+        productDao.getProduct(1L);
     }
 
     @Test(expected = ProductNotFoundException.class)
@@ -91,7 +89,7 @@ public class ArrayListProductDaoTest {
     public void whenProductToSaveHasNotNullExistedIdThenShouldUpdate() {
         Product updatedProduct = new Product(1L, "slls", "new", new BigDecimal(100), usd, 5, "https://raw.githubusercontent.com/andrewosipenko/phoneshop-ext-images/master/manufacturer/Siemens/Siemens%20SXG75.jpg");
         productDao.save(updatedProduct);
-        assertEquals(productDao.get(1L), updatedProduct);
+        assertEquals(productDao.getProduct(1L), updatedProduct);
     }
 
     @Test

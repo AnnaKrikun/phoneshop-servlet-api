@@ -4,14 +4,13 @@ import com.es.phoneshop.dto.ViewedProductDto;
 import com.es.phoneshop.exception.OutOfStockException;
 import com.es.phoneshop.exception.ProductNotFoundException;
 import com.es.phoneshop.model.cart.Cart;
+import com.es.phoneshop.model.cart.CartService;
+import com.es.phoneshop.model.cart.DefaultCartService;
+import com.es.phoneshop.model.product.ArrayListProductDao;
 import com.es.phoneshop.model.product.Product;
-import com.es.phoneshop.repository.ProductDao;
-import com.es.phoneshop.repository.impl.ArrayListProductDao;
-import com.es.phoneshop.service.CartService;
-import com.es.phoneshop.service.ViewedProductsService;
-import com.es.phoneshop.service.impl.DefaultCartService;
-import com.es.phoneshop.service.impl.ViewedProductsServiceImpl;
-import com.es.phoneshop.util.NumberValidator;
+import com.es.phoneshop.model.product.ProductDao;
+import com.es.phoneshop.model.product.viewed.ViewedProductsService;
+import com.es.phoneshop.model.product.viewed.ViewedProductsServiceImpl;
 import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServlet;
@@ -19,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.List;
 
@@ -30,15 +30,15 @@ public class ProductDetailsPageServlet extends HttpServlet {
     @Override
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        this.productDao = ArrayListProductDao.instance();
+        this.productDao = ArrayListProductDao.INSTANCE;
         this.cartService = DefaultCartService.INSTANCE;
         this.viewedProductsService = ViewedProductsServiceImpl.INSTANCE;
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException, ProductNotFoundException {
-        Long id = NumberValidator.parseProductId(req);
-        Product product = productDao.get(id);
+        Long id = parseProductId(req);
+        Product product = productDao.getProduct(id);
         List<ViewedProductDto> viewedProducts
                 = viewedProductsService.getViewedProducts(req);
         viewedProducts = viewedProductsService.addViewedProduct(viewedProducts, product);
@@ -51,11 +51,11 @@ public class ProductDetailsPageServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        Long productId = NumberValidator.parseProductId(req);
+        Long productId = parseProductId(req);
 
         int quantity = 0;
         try {
-            quantity = NumberValidator.getQuantityIfValid(req);
+            quantity = getQuantityIfValid(req);
         } catch (ParseException | NumberFormatException e) {
             req.setAttribute("error", "Incorrect number");
             doGet(req, resp);
@@ -72,6 +72,25 @@ public class ProductDetailsPageServlet extends HttpServlet {
         }
 
         resp.sendRedirect(req.getContextPath() + "/products/" + productId + "?message=Product added to cart");
+    }
+
+    private int getQuantityIfValid(HttpServletRequest request) throws ParseException {
+        int quantity;
+        String quantityStr = request.getParameter("quantity");
+
+        quantity = Integer.parseInt(quantityStr);
+        NumberFormat format = NumberFormat.getInstance(request.getLocale());
+        quantity = format.parse(Integer.toString(quantity)).intValue();
+        if (quantity < 1) {
+            throw new NumberFormatException();
+        }
+
+        return quantity;
+    }
+
+    private Long parseProductId(HttpServletRequest req) {
+        String productInfo = req.getPathInfo().substring(1);
+        return Long.valueOf(productInfo);
     }
 }
 

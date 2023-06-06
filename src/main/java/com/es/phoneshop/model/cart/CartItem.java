@@ -12,7 +12,7 @@ import java.io.Serializable;
 @Getter
 @Setter
 @EqualsAndHashCode
-public class CartItem implements Serializable, Cloneable {
+public class CartItem implements Serializable {
     private Product product;
     private int quantity = 0;
 
@@ -21,12 +21,4 @@ public class CartItem implements Serializable, Cloneable {
         return product.getCode() + ", " + quantity;
     }
 
-    @Override
-    public CartItem clone() {
-        try {
-            return (CartItem) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
-        }
-    }
 }

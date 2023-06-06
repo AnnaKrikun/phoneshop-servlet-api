@@ -19,8 +19,6 @@ public class Cart implements Serializable {
 
     public Cart() {
         items = new ArrayList<>();
-        totalQuantity = 0;
-        totalCost = new BigDecimal(0);
     }
 
     @Override

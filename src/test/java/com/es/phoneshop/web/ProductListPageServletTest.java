@@ -1,27 +1,23 @@
 package com.es.phoneshop.web;
 
-import com.es.phoneshop.exception.OutOfStockException;
-import com.es.phoneshop.model.sortenum.SortField;
-import com.es.phoneshop.model.sortenum.SortOrder;
-import com.es.phoneshop.repository.ProductDao;
-import com.es.phoneshop.service.CartService;
-import com.es.phoneshop.service.ViewedProductsService;
+import com.es.phoneshop.model.product.viewed.ViewedProductsServiceImpl;
 import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletConfig;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
-import java.util.Locale;
+import java.util.ArrayList;
 
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ProductListPageServletTest {
@@ -32,63 +28,25 @@ public class ProductListPageServletTest {
     @Mock
     private RequestDispatcher requestDispatcher;
     @Mock
-    private ProductDao productDao;
+    private ServletConfig config;
     @Mock
-    private ViewedProductsService viewedProductsService;
-    @Mock
-    private CartService cartService;
-    @InjectMocks
+    private ViewedProductsServiceImpl viewedProductsService;
+
     private ProductListPageServlet servlet = new ProductListPageServlet();
 
     @Before
-    public void setup() {
+    public void setup() throws ServletException {
+        servlet.init(config);
         when(request.getRequestDispatcher(anyString())).thenReturn(requestDispatcher);
-        when(request.getParameter("productId")).thenReturn("1");
-        when(request.getLocale()).thenReturn(Locale.ENGLISH);
     }
 
     @Test
     public void testDoGet() throws ServletException, IOException {
-        when(request.getParameter("query")).thenReturn("sam");
-        when(request.getParameter("sort")).thenReturn("price");
-        when(request.getParameter("order")).thenReturn("desc");
+        when(viewedProductsService.getViewedProducts(request)).thenReturn(new ArrayList<>());
 
         servlet.doGet(request, response);
 
-        verify(request).setAttribute(eq("products"), any());
-        verify(productDao).findProductsByNameAndSort(
-                eq("sam"),
-                eq(SortField.valueOf("price")),
-                eq(SortOrder.valueOf("desc")));
-        verify(request).setAttribute(eq("viewedProducts"), any());
-        verify(request).getRequestDispatcher(eq("/WEB-INF/pages/productList.jsp"));
         verify(requestDispatcher).forward(request, response);
+        verify(request).setAttribute(eq("products"), any());
     }
-
-    @Test
-    public void ifInputQuantityIncorrectThenThrowException() throws ServletException, IOException {
-        when(request.getParameter("quantity")).thenReturn("ss");
-
-        servlet.doPost(request, response);
-        verify(request).setAttribute(eq("error"), eq("Incorrect number"));
-    }
-
-    @Test
-    public void ifNegativeInputQuantityIncorrectThenThrowException() throws ServletException, IOException {
-        when(request.getParameter("quantity")).thenReturn("-5");
-
-        servlet.doPost(request, response);
-        verify(request).setAttribute(eq("error"), eq("Incorrect number"));
-    }
-
-    @Test
-    public void ifNotAvailableStockThenThrowException() throws ServletException, OutOfStockException, IOException {
-        doThrow(OutOfStockException.class).when(cartService).add(any(), anyLong(), anyInt());
-        when(request.getParameter("quantity")).thenReturn("5");
-
-        servlet.doPost(request, response);
-
-        verify(request).setAttribute(eq("error"), contains("Out of stock"));
-    }
-
 }

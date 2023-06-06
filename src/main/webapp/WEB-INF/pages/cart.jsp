@@ -73,8 +73,5 @@
         <p></p>
         <button>Update</button>
     </form>
-    <form action="${pageContext.servletContext.contextPath}/checkout" method="get">
-        <button>Checkout</button>
-    </form>
     <form id="deleteCartItem" method="post"></form>
 </tags:master>

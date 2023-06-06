@@ -1,4 +1,4 @@
-package com.es.phoneshop.service;
+package com.es.phoneshop.model.product.viewed;
 
 import com.es.phoneshop.dto.ViewedProductDto;
 import com.es.phoneshop.model.product.Product;
